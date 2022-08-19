@@ -28,20 +28,15 @@ const logger = createLogger({
       level: 'debug',
       format: combinedFormat,
     }),
-  ],
-});
-
-if (process.env.NODE_ENV !== 'production') {
-  logger.add(
     new transports.Console({
       format: format.combine(
         format.colorize(),
         format.simple(),
         combinedFormat
       ),
-      level: 'debug',
-    })
-  );
-}
+      level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
+    }),
+  ],
+});
 
 module.exports = logger;
