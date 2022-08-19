@@ -10,7 +10,7 @@ class QuillBot {
   async createNewSession() {
     logger.info('Creating new session');
     const launchOptions = {
-      headless: process.env.NODE_ENV ? false : true,
+      headless: process.env.NODE_ENV === 'development' ? false : true,
     };
 
     this.browser = await puppeteer.launch(launchOptions);
