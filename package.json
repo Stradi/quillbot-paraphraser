@@ -1,0 +1,22 @@
+{
+  "name": "quillbot-automator",
+  "version": "0.0.1",
+  "description": "A QuillBot bot that automatically paraphrases big chunks of text",
+  "keywords": [
+    "bot",
+    "quillbot",
+    "automation"
+  ],
+  "author": "Batin EVIRGEN",
+  "license": "GPL-3.0-only",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "cross-env NODE_ENV=development node src/index.js",
+    "start": "cross-env NODE_ENV=production node src/index.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.0.1",
+    "puppeteer": "^16.2.0",
+    "puppeteer-extra-plugin-stealth": "^2.11.1"
+  }
+}
