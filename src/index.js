@@ -1,6 +1,5 @@
 require('dotenv').config();
 const QuillBot = require('./quillbot');
-const { splitText, readFile, writeFile } = require('./text');
 
 (async () => {
   const bot = new QuillBot();
