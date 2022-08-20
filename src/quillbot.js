@@ -8,6 +8,7 @@ const clipboardy = require('clipboardy');
 const logger = require('./logger');
 const { getWordCount } = require('./utils');
 const { WORD_LIMIT, PARAPHRASE_PER_SESSION } = require('./config');
+const { splitText, readFile, writeFile } = require('./text');
 
 const SELECTORS = {
   TEXT_INPUT: '[aria-describedby="inputText"]',
@@ -123,6 +124,23 @@ class QuillBot {
     for (let sentence of sentences) {
       const result = await this.paraphrase(sentence);
       results.push(result);
+    }
+
+    return results;
+  }
+
+  /**
+   * Reads the given file and returns the paraphrased sentences.
+   * @param {string} filename Filename of the file to read.
+   * @param {boolean} writeToFile Whether to write the paraphrased text to a file.
+   * @returns {string[]} Paraphrased sentences.
+   */
+  async paraphraseFile(filename, writeToFile = false) {
+    const sentences = splitText(await readFile(filename));
+    const results = await this.paraphraseMultiple(sentences);
+
+    if (writeToFile) {
+      await writeFile(filename, results);
     }
 
     return results;
