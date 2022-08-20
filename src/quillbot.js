@@ -113,7 +113,7 @@ class QuillBot {
 
   async removeButtonsOnTextInput() {
     logger.debug('Removing buttons on text input');
-    this.page.evaluate((selector) => {
+    await this.page.evaluate((selector) => {
       const parent = document.querySelector(selector).parentElement;
       if (parent.children.length > 1) {
         // We are removing children because once the text input has text in it
