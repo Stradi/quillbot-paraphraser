@@ -42,6 +42,16 @@ class QuillBot {
     this.page = await this.browser.newPage();
     logger.debug('Created new page');
 
+    logger.debug('Minimizing the browser window');
+    const session = await this.page.target().createCDPSession();
+    const { windowId } = await session.send('Browser.getWindowForTarget');
+    await session.send('Browser.setWindowBounds', {
+      windowId,
+      bounds: {
+        windowState: 'minimized',
+      },
+    });
+
     (await this.browser.pages())[0].close();
     logger.debug('Closed default page');
 
