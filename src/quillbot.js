@@ -1,13 +1,34 @@
+const puppeteer = require('puppeteer-extra');
+
+const stealthPlugin = require('puppeteer-extra-plugin-stealth');
+puppeteer.use(stealthPlugin());
+
+const clipboardy = require('clipboardy');
+
 const logger = require('./logger');
-const puppeteer = require('puppeteer');
+const { getWordCount } = require('./utils');
+
+const PARAPHRASE_WORD_COUNT = 125;
+const SESSION_LIMIT = 5;
+
+const SELECTORS = {
+  TEXT_INPUT: '[aria-describedby="inputText"]',
+  TEXT_OUTPUT: '#articleTextArea',
+  MODAL: 'div[role="presentation"].MuiModal-root',
+};
 
 class QuillBot {
+  constructor() {
+    this.sessionLimit = 0;
+  }
+
   /**
    * Creates a new session and opens the QuillBot website.
    * This function also sets up the event listener for when the browser is disconnected.
    * This is useful when we need to clear the browser cache and restart the session.
    */
   async createNewSession() {
+    this.sessionLimit = 0;
     logger.info('Creating new session');
     const launchOptions = {
       headless: process.env.NODE_ENV === 'development' ? false : true,
@@ -44,6 +65,93 @@ class QuillBot {
     this.page = null;
 
     logger.info('Browser closed');
+  }
+
+  /**
+   * Paraphrases the given text and returns it.
+   * @param {string} text - The text to paraphrase.
+   * @returns {string} Paraphrased text.
+   */
+  async paraphrase(text) {
+    if (this.sessionLimit >= SESSION_LIMIT) {
+      logger.info(
+        'Session limit reached. Clearing browser cache and restarting session.'
+      );
+      await this.closeBrowser();
+      await this.createNewSession();
+    }
+
+    this.sessionLimit++;
+
+    logger.info('Paraphrasing text');
+    const wordCount = getWordCount(text);
+    if (wordCount > PARAPHRASE_WORD_COUNT) {
+      return Promise.reject(
+        new Error(
+          `Text is too long (${wordCount} words). Maximum length is ${PARAPHRASE_WORD_COUNT} words.`
+        )
+      );
+    }
+
+    await this.closeModalIfOpen();
+    await this.removeButtonsOnTextInput();
+    await this.pasteText(text);
+
+    await this.page.keyboard.down('Control');
+    await this.page.keyboard.press('Enter');
+    await this.page.keyboard.up('Control');
+
+    logger.debug('Waiting for paraphrase to finish');
+    await this.page.waitForNetworkIdle({
+      timeout: 60000,
+    });
+
+    const outputText = await this.page.$eval(SELECTORS.TEXT_OUTPUT, (el) => {
+      return el.innerText;
+    });
+    logger.info('Paraphrase finished');
+    return outputText;
+  }
+
+  async removeButtonsOnTextInput() {
+    logger.debug('Removing buttons on text input');
+    this.page.evaluate((selector) => {
+      const parent = document.querySelector(selector).parentElement;
+      if (parent.children.length > 1) {
+        // We are removing children because once the text input has text in it
+        // QuillBot will move the parent dom element to somewhere else and
+        // removing parent element will throw an error in QuillBot website.
+        const buttonsDOM = parent.children[1];
+        buttonsDOM.children[0].remove();
+      }
+    }, SELECTORS.TEXT_INPUT);
+  }
+
+  async pasteText(text) {
+    logger.debug('Clearing text input');
+    const textInput = await this.page.$(SELECTORS.TEXT_INPUT);
+
+    await textInput.click();
+    await this.page.keyboard.down('Control');
+    await this.page.keyboard.press('KeyA');
+    await this.page.keyboard.press('Delete');
+    await this.page.keyboard.up('Control');
+
+    logger.debug('Pasting text');
+    await clipboardy.write(text);
+    await this.page.keyboard.down('Control');
+    await this.page.keyboard.press('KeyV');
+    await this.page.keyboard.up('Control');
+  }
+
+  async closeModalIfOpen() {
+    const modal = await this.page.$(SELECTORS.MODAL);
+    if (modal) {
+      logger.debug('Modal found, closing it.');
+      await this.page.evaluate((selector) => {
+        document.querySelector(selector).remove();
+      }, SELECTORS.MODAL);
+    }
   }
 }
 
