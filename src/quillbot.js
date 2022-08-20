@@ -111,6 +111,23 @@ class QuillBot {
     return outputText;
   }
 
+  /**
+   * Paraphrases an string array
+   * @param {string[]} sentences Sentences to paraphrase.
+   * @returns {string[]} Paraphrased sentences.
+   */
+  async paraphraseMultiple(sentences) {
+    logger.info(`Paraphrasing ${sentences.length} sentences...`);
+
+    const results = [];
+    for (let sentence of sentences) {
+      const result = await this.paraphrase(sentence);
+      results.push(result);
+    }
+
+    return results;
+  }
+
   async removeButtonsOnTextInput() {
     logger.debug('Removing buttons on text input');
     await this.page.evaluate((selector) => {
