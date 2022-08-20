@@ -7,9 +7,7 @@ const clipboardy = require('clipboardy');
 
 const logger = require('./logger');
 const { getWordCount } = require('./utils');
-
-const PARAPHRASE_WORD_COUNT = 125;
-const SESSION_LIMIT = 5;
+const { WORD_LIMIT, PARAPHRASE_PER_SESSION } = require('./config');
 
 const SELECTORS = {
   TEXT_INPUT: '[aria-describedby="inputText"]',
@@ -73,7 +71,7 @@ class QuillBot {
    * @returns {string} Paraphrased text.
    */
   async paraphrase(text) {
-    if (this.sessionLimit >= SESSION_LIMIT) {
+    if (this.sessionLimit >= PARAPHRASE_PER_SESSION) {
       logger.info(
         'Session limit reached. Clearing browser cache and restarting session.'
       );
@@ -85,10 +83,10 @@ class QuillBot {
 
     logger.info('Paraphrasing text');
     const wordCount = getWordCount(text);
-    if (wordCount > PARAPHRASE_WORD_COUNT) {
+    if (wordCount > WORD_LIMIT) {
       return Promise.reject(
         new Error(
-          `Text is too long (${wordCount} words). Maximum length is ${PARAPHRASE_WORD_COUNT} words.`
+          `Text is too long (${wordCount} words). Maximum length is ${WORD_LIMIT} words.`
         )
       );
     }
