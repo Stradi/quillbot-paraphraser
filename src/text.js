@@ -1,8 +1,14 @@
 const path = require('path');
 const fs = require('fs-extra');
 
+const winkNLP = require('wink-nlp');
+const winkNLPModel = require('wink-eng-lite-model');
+
+const NLP = winkNLP(winkNLPModel);
+
 const { WORD_LIMIT } = require('./config');
 const logger = require('./logger');
+
 /**
  * Splits a string into an array of sentences.
  * @param {string} text
@@ -10,27 +16,26 @@ const logger = require('./logger');
  */
 const splitText = (text) => {
   logger.info('Splitting text into sentences...');
-  const cleanedText = text.replaceAll('\n', '').replaceAll('  ', '');
-  const allSentences = cleanedText
-    .substring(0, cleanedText.length - 1)
-    .split('. ');
+
+  const doc = NLP.readDoc(text);
+  const allSentences = doc.sentences().out();
 
   const sentences = [];
   let tempSentence = '';
   for (let s of allSentences) {
     const totalWordCount = tempSentence.split(' ').length + s.split(' ').length;
     if (totalWordCount > WORD_LIMIT) {
-      sentences.push(tempSentence);
-      tempSentence = s + '[DOT]';
+      sentences.push(tempSentence.substring(0, tempSentence.length - 1));
+      tempSentence = s;
     } else {
-      tempSentence += s + '[DOT]';
+      tempSentence += s + ' ';
     }
   }
 
   sentences.push(tempSentence);
 
   logger.info(`Found ${sentences.length} sentences.`);
-  return sentences.map((s) => s.replaceAll('[DOT]', '.'));
+  return sentences;
 };
 
 /**
