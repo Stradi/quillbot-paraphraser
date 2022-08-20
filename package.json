@@ -18,6 +18,7 @@
     "clipboardy": "2.3.0",
     "cross-env": "^7.0.3",
     "dotenv": "^16.0.1",
+    "fs-extra": "^10.1.0",
     "puppeteer": "^16.2.0",
     "puppeteer-extra": "^3.3.4",
     "puppeteer-extra-plugin-stealth": "^2.11.1",
